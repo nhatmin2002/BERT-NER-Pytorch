@@ -14,7 +14,7 @@ from callback.progressbar import ProgressBar
 from tools.common import seed_everything,json_to_text
 from tools.common import init_logger, logger
 
-from transformers import WEIGHTS_NAME, BertConfig,get_linear_schedule_with_warmup,AdamW, BertTokenizer
+from transformers import WEIGHTS_NAME, BertConfig,get_linear_schedule_with_warmup,AdamW, BertTokenizer,AutoTokenizer
 from models.bert_for_ner import BertCrfForNer
 from processors.utils_ner import get_entities
 from processors.ner_seq import convert_examples_to_features
@@ -25,7 +25,7 @@ from tools.finetuning_argparse import get_argparse
 
 MODEL_CLASSES = {
     ## bert ernie bert_wwm bert_wwwm_ext
-    'bert': (BertConfig, BertCrfForNer, BertTokenizer),
+    'bert': (BertConfig, BertCrfForNer, AutoTokenizer),#BertTokenizer
 }
 
 def train(args, train_dataset, model, tokenizer):
