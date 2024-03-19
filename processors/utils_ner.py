@@ -1,7 +1,7 @@
 import csv
 import json
 import torch
-from transformers import BertTokenizer
+from transformers import BertTokenizer,AutoTokenizer
 
 class DataProcessor(object):
     """Base class for data converters for sequence classification data sets."""
