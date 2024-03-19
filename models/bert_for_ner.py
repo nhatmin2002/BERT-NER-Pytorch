@@ -46,7 +46,7 @@ class BertSoftmaxForNer(BertPreTrainedModel):
 class BertCrfForNer(BertPreTrainedModel): 
     def __init__(self, config):
         super(BertCrfForNer, self).__init__(config)
-        self.bert = AutoModel.from_pretrained(config.model_name_or_path)#BertModel(config)
+        self.bert = AutoModel.from_pretrained(config)#BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, config.num_labels)
         self.crf = CRF(num_tags=config.num_labels, batch_first=True)
