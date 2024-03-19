@@ -422,10 +422,10 @@ def main():
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
     args.model_type = args.model_type.lower()
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
-    config = config_class.from_pretrained('vinai/phobert-base',num_labels=num_labels,) #args.model_name_or_path
-    tokenizer = tokenizer_class.from_pretrained('vinai/phobert-base',
+    config = config_class.from_pretrained(args.model_name_or_path,num_labels=num_labels,) #args.model_name_or_path
+    tokenizer = tokenizer_class.from_pretrained(args.model_name_or_path,
                                                 do_lower_case=args.do_lower_case,) #args.model_name_or_path
-    model = model_class.from_pretrained('vinai/phobert-base', config=config) #args.model_name_or_path
+    model = model_class.from_pretrained(args.model_name_or_path, config=config) #args.model_name_or_path
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
