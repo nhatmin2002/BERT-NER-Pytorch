@@ -282,25 +282,38 @@ class CnerProcessor(DataProcessor):
         return ["X",'O','B-LOCATION-GPE', 'I-LOCATION-GPE', 'B-QUANTITY-NUM', 'B-EVENT-CUL', 'I-EVENT-CUL', 'B-DATETIME', 'I-DATETIME', 'B-DATETIME-DATERANGE', 'I-DATETIME-DATERANGE', 'B-PERSONTYPE', 'B-PERSON', 'B-QUANTITY-PER', 'I-QUANTITY-PER', 'B-ORGANIZATION', 'B-LOCATION-GEO', 'I-LOCATION-GEO', 'B-LOCATION-STRUC', 'I-LOCATION-STRUC', 'B-PRODUCT-COM', 'I-PRODUCT-COM', 'I-ORGANIZATION', 'B-DATETIME-DATE', 'I-DATETIME-DATE', 'B-QUANTITY-DIM', 'I-QUANTITY-DIM', 'B-PRODUCT', 'I-PRODUCT', 'B-QUANTITY', 'I-QUANTITY', 'B-DATETIME-DURATION', 'I-DATETIME-DURATION', 'I-PERSON', 'B-QUANTITY-CUR', 'I-QUANTITY-CUR', 'B-DATETIME-TIME', 'B-QUANTITY-TEM', 'I-QUANTITY-TEM', 'B-DATETIME-TIMERANGE', 'I-DATETIME-TIMERANGE', 'B-EVENT-GAMESHOW', 'I-EVENT-GAMESHOW', 'B-QUANTITY-AGE', 'I-QUANTITY-AGE', 'B-QUANTITY-ORD', 'I-QUANTITY-ORD', 'B-PRODUCT-LEGAL', 'I-PRODUCT-LEGAL', 'I-PERSONTYPE', 'I-DATETIME-TIME', 'B-LOCATION', 'B-ORGANIZATION-MED', 'I-ORGANIZATION-MED', 'B-URL', 'B-PHONENUMBER', 'B-ORGANIZATION-SPORTS', 'I-ORGANIZATION-SPORTS', 'B-EVENT-SPORT', 'I-EVENT-SPORT', 'B-SKILL', 'I-SKILL', 'B-EVENT-NATURAL', 'I-LOCATION', 'I-EVENT-NATURAL', 'I-QUANTITY-NUM', 'B-EVENT', 'I-EVENT', 'B-ADDRESS', 'I-ADDRESS', 'B-IP', 'I-IP', 'I-PHONENUMBER', 'B-EMAIL', 'I-EMAIL', 'I-URL', 'B-ORGANIZATION-STOCK', 'B-DATETIME-SET', 'I-DATETIME-SET', 'B-PRODUCT-AWARD', 'I-PRODUCT-AWARD', 'B-MISCELLANEOUS', 'I-MISCELLANEOUS', 'I-ORGANIZATION-STOCK', 
                 'B-LOCATION-GPE-GEO',"[START]", "[END]"]
 
-    def _create_examples(self, lines, set_type):
-        """Creates examples for the training and dev sets."""
-        examples = []
-        for (i, line) in enumerate(lines):
-            if i == 0:
-                continue
-            guid = "%s-%s" % (set_type, i)
-            text_a= line['words']
-            # BIOS
-            labels = []
-            for x in line['labels']:
-                # if 'M-' in x:
-                #     labels.append(x.replace('M-','I-'))
-                # elif 'E-' in x:
-                #     labels.append(x.replace('E-', 'I-'))
-                # else:
-                    labels.append(x)
-            examples.append(InputExample(guid=guid, text_a=text_a, labels=labels))
-        return examples
+    # def _create_examples(self, lines, set_type):
+    #     """Creates examples for the training and dev sets."""
+    #     examples = []
+    #     for (i, line) in enumerate(lines):
+    #         if i == 0:
+    #             continue
+    #         guid = "%s-%s" % (set_type, i)
+    #         text_a= line['words']
+    #         # BIOS
+    #         labels = []
+    #         for x in line['labels']:
+    #             # if 'M-' in x:
+    #             #     labels.append(x.replace('M-','I-'))
+    #             # elif 'E-' in x:
+    #             #     labels.append(x.replace('E-', 'I-'))
+    #             # else:
+    #                 labels.append(x)
+    #         examples.append(InputExample(guid=guid, text_a=text_a, labels=labels))
+    #     return examples
+
+    def _create_examples(lines, set_type):
+            """Creates examples for the training and dev sets."""
+            examples = []
+            for (i, line) in enumerate(lines):
+                guid = "%s-%s" % (set_type, i)
+                text_a= line['words']
+                # BIOS
+                labels = []
+                for x in line['labels']:
+                        labels.append(x)
+                examples.append(InputExample(guid=guid, text_a=text_a, labels=labels))
+            return examples
 
 class CluenerProcessor(DataProcessor):
     """Processor for the chinese ner data set."""
