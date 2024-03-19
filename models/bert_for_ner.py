@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .layers.crf import CRF
-from transformers import BertModel,BertPreTrainedModel,AutoModelForTokenClassification,RobertaForTokenClassification,AutoConfig
+from transformers import BertModel,BertPreTrainedModel,AutoModelForTokenClassification,RobertaForTokenClassification,AutoConfig,RobertaModel
 from .layers.linears import PoolerEndLogits, PoolerStartLogits
 from torch.nn import CrossEntropyLoss
 from losses.focal_loss import FocalLoss
@@ -46,7 +46,7 @@ class BertSoftmaxForNer(BertPreTrainedModel):
 class BertCrfForNer(RobertaForTokenClassification): #BertPreTrainedModel
     def __init__(self, config):
         super(BertCrfForNer, self).__init__(config)
-        self.bert = AutoModelForTokenClassification.from_pretrained(config)#BertModel(config)
+        self.bert = RobertaModel(config)#BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, config.num_labels)
         self.crf = CRF(num_tags=config.num_labels, batch_first=True)
