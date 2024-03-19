@@ -188,11 +188,11 @@ class CnerProcessor(DataProcessor):
             # BIOS
             labels = []
             for x in line['labels']:
-                if 'M-' in x:
-                    labels.append(x.replace('M-','I-'))
-                elif 'E-' in x:
-                    labels.append(x.replace('E-', 'I-'))
-                else:
+                # if 'M-' in x:
+                #     labels.append(x.replace('M-','I-'))
+                # elif 'E-' in x:
+                #     labels.append(x.replace('E-', 'I-'))
+                # else:
                     labels.append(x)
             examples.append(InputExample(guid=guid, text_a=text_a, labels=labels))
         return examples
