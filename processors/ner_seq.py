@@ -375,8 +375,15 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         input_len = len(label_ids)
 
         # Zero-pad up to the sequence length.
-        if len(label_ids) < max_seq_length:
-            padding_length = max_seq_length - len(label_ids)
+        if len(input_ids) > max_seq_length:
+            # Thực hiện xử lý khi input_ids vượt quá max_seq_length
+            input_ids = input_ids[:max_seq_length]
+            input_mask = input_mask[:max_seq_length]
+            segment_ids = segment_ids[:max_seq_length]
+            label_ids = label_ids[:max_seq_length]
+        else:
+            # Thực hiện xử lý khi input_ids không vượt quá max_seq_length
+            padding_length = max_seq_length - len(input_ids)
             if pad_on_left:
                 input_ids = [pad_token] * padding_length + input_ids
                 input_mask = [1 if mask_padding_with_zero else 0] * padding_length + input_mask
@@ -387,10 +394,11 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
                 input_mask += [1 if mask_padding_with_zero else 0] * padding_length
                 segment_ids += [pad_token_segment_id] * padding_length
                 label_ids += [pad_token] * padding_length
-
-        a=len(label_ids)
-        if a<256:
-          print(a)
+                
+        if len(label_ids) < max_seq_length:
+            # Thực hiện xử lý khi label_ids nhỏ hơn max_seq_length
+            padding_length = max_seq_length - len(label_ids)
+            label_ids += [pad_token] * padding_length
         if ex_index < 5:
             print("*** Example ***")
             print("guid: %s", example.guid)
@@ -403,6 +411,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         features.append(InputFeatures(input_ids=input_ids, input_mask=input_mask, input_len=input_len,
                                       segment_ids=segment_ids, label_ids=label_ids))
     return features
+
 
 class CnerProcessor(DataProcessor):
     """Processor for the chinese ner data set."""
