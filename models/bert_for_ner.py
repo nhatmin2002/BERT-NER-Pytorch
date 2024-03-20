@@ -94,6 +94,7 @@ class RoBertaCRF(BertPreTrainedModel):
             # outputs = (logits,)
             # outputs =(-1*loss,)+outputs
         outputs = (loss, logits)
+        return outputs # (loss), scores
 
 class BertSpanForNer(BertPreTrainedModel):
     def __init__(self, config,):
