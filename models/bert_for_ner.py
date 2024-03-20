@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .layers.crf import CRF
+# from .layers.crf import CRF
 from transformers import BertModel,BertPreTrainedModel,AutoModelForTokenClassification,RobertaForTokenClassification,AutoConfig,RobertaModel,AutoModel
 from .layers.linears import PoolerEndLogits, PoolerStartLogits
 from torch.nn import CrossEntropyLoss
 from losses.focal_loss import FocalLoss
 from losses.label_smoothing import LabelSmoothingCrossEntropy
 
+from torchcrf import CRF
 class BertSoftmaxForNer(BertPreTrainedModel):
     def __init__(self, config):
         super(BertSoftmaxForNer, self).__init__(config)
