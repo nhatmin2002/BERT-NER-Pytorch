@@ -68,7 +68,7 @@ def collate_fn(batch):
 # def convert_examples_to_features(examples,label_list,max_seq_length,tokenizer,
 #                                  cls_token_at_end=False,cls_token="[CLS]",cls_token_segment_id=1,
 #                                  sep_token="[SEP]",pad_on_left=False,pad_token=0,pad_token_segment_id=0,
-#                                  sequence_a_segment_id=1,mask_padding_with_zero=True,):
+#                                  sequence_a_segment_id=0,mask_padding_with_zero=True,):
 #     """ Loads a data file into a list of `InputBatch`s
 #         `cls_token_at_end` define the location of the CLS token:
 #             - False (Default, BERT/XLM pattern): [CLS] + A + [SEP] + B + [SEP]
@@ -159,7 +159,7 @@ def collate_fn(batch):
 def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer,
                                  cls_token_at_end=False, cls_token="[CLS]", cls_token_segment_id=1,
                                  sep_token="[SEP]", pad_on_left=False, pad_token=0, pad_token_segment_id=0,
-                                 sequence_a_segment_id=0, mask_padding_with_zero=True):
+                                 sequence_a_segment_id=1, mask_padding_with_zero=True):
     """Loads a data file into a list of `InputBatch`s.
     
     Args:
