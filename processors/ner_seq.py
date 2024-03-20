@@ -394,12 +394,19 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
                 input_mask += [1 if mask_padding_with_zero else 0] * padding_length
                 segment_ids += [pad_token_segment_id] * padding_length
                 label_ids += [pad_token] * padding_length
-                
+
         if len(label_ids) < max_seq_length:
             # Thực hiện xử lý khi label_ids nhỏ hơn max_seq_length
             padding_length = max_seq_length - len(label_ids)
             label_ids += [pad_token] * padding_length
-        if ex_index < 5:
+        if len(segment_ids) < max_seq_length:
+            padding_length = max_seq_length - len(segment_ids)
+            segment_ids += [pad_token_segment_id] * padding_length
+        assert len(input_ids) == max_seq_length
+        assert len(input_mask) == max_seq_length
+        assert len(segment_ids) == max_seq_length
+        assert len(label_ids) == max_seq_length
+        if ex_index < 20:
             print("*** Example ***")
             print("guid: %s", example.guid)
             print("tokens: %s", " ".join([str(x) for x in tokens]))
@@ -411,6 +418,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         features.append(InputFeatures(input_ids=input_ids, input_mask=input_mask, input_len=input_len,
                                       segment_ids=segment_ids, label_ids=label_ids))
     return features
+
 
 
 class CnerProcessor(DataProcessor):
