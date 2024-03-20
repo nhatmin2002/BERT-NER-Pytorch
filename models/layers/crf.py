@@ -256,7 +256,7 @@ class CRF(nn.Module):
         # Start transition and first emission
         # shape: (batch_size, num_tags)
         score = self.start_transitions + emissions[0]
-        history_idx = torch.zeroes((seq_length, batch_size, self.num_tags),
+        history_idx = torch.zeros((seq_length, batch_size, self.num_tags),
                                   dtype=torch.long, device=device)
         oor_idx = torch.zeros((batch_size, self.num_tags),
                               dtype=torch.long, device=device)
