@@ -524,7 +524,8 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
             label_ids = [pad_token] * padding_length + label_ids
         else:
             input_ids += [pad_token] * padding_length
-            input_mask += [1 if mask_padding_with_zero else 0] * padding_length
+            input_mask += [0 if mask_padding_with_zero else 1] * padding_length
+            #input_mask += [1 if mask_padding_with_zero else 0] * padding_length
             #input_mask += [0 if mask_padding_with_zero else 1] * padding_length
 
             segment_ids += [pad_token_segment_id] * padding_length
