@@ -121,7 +121,7 @@ class CRF(nn.Module):
         if nbest is None:
             nbest = 1
         if mask is None:
-            mask = torch.ones(emissions.shape[:2], dtype=torch.uint8,
+            mask = torch.zeros(emissions.shape[:2], dtype=torch.uint8,#ones
                               device=emissions.device)
         if mask.dtype != torch.uint8:
             mask = mask.byte()
