@@ -243,76 +243,76 @@ class CRF(nn.Module):
     def _viterbi_decode(self, emissions: torch.FloatTensor,
                     mask: torch.ByteTensor,
                     pad_tag: Optional[int] = None) -> List[List[int]]:
-    # emissions: (seq_length, batch_size, num_tags)
-    # mask: (seq_length, batch_size)
-    # return: (batch_size, seq_length)
-    if pad_tag is None:
-        pad_tag = 1  # Chỉnh lại giá trị của pad_tag
-
-    device = emissions.device
-    seq_length, batch_size = mask.shape
-
-    # Start transition và emission đầu tiên
-    # shape: (batch_size, num_tags)
-    score = self.start_transitions + emissions[0]
-    history_idx = torch.zeros((seq_length, batch_size, self.num_tags),
+        # emissions: (seq_length, batch_size, num_tags)
+        # mask: (seq_length, batch_size)
+        # return: (batch_size, seq_length)
+        if pad_tag is None:
+            pad_tag = 1  # Chỉnh lại giá trị của pad_tag
+    
+        device = emissions.device
+        seq_length, batch_size = mask.shape
+    
+        # Start transition và emission đầu tiên
+        # shape: (batch_size, num_tags)
+        score = self.start_transitions + emissions[0]
+        history_idx = torch.zeros((seq_length, batch_size, self.num_tags),
+                                  dtype=torch.long, device=device)
+        oor_idx = torch.zeros((batch_size, self.num_tags),
                               dtype=torch.long, device=device)
-    oor_idx = torch.zeros((batch_size, self.num_tags),
-                          dtype=torch.long, device=device)
-    oor_tag = torch.full((seq_length, batch_size), pad_tag,
-                         dtype=torch.long, device=device)
-
-    # Viterbi algorithm recursive case: tính toán score của chuỗi tag tốt nhất
-    # cho mỗi tag kế tiếp có thể có
-    for i in range(1, seq_length):
-        # Broadcast viterbi score cho mỗi tag kế tiếp có thể có
-        # shape: (batch_size, num_tags, 1)
-        broadcast_score = score.unsqueeze(2)
-
-        # Broadcast emission score cho mỗi tag hiện tại có thể có
-        # shape: (batch_size, 1, num_tags)
-        broadcast_emission = emissions[i].unsqueeze(1)
-
-        # Tính toán tensor score có kích thước (batch_size, num_tags, num_tags) trong đó
-        # cho mỗi mẫu, entry tại hàng i và cột j lưu trữ điểm số của chuỗi tag tốt nhất cho đến nay
-        # kết thúc bằng việc chuyển từ tag i sang tag j và phát ra
-        # shape: (batch_size, num_tags, num_tags)
-        next_score = broadcast_score + self.transitions + broadcast_emission
-
-        # Tìm điểm số lớn nhất trên tất cả các tag hiện tại có thể có
+        oor_tag = torch.full((seq_length, batch_size), pad_tag,
+                             dtype=torch.long, device=device)
+    
+        # Viterbi algorithm recursive case: tính toán score của chuỗi tag tốt nhất
+        # cho mỗi tag kế tiếp có thể có
+        for i in range(1, seq_length):
+            # Broadcast viterbi score cho mỗi tag kế tiếp có thể có
+            # shape: (batch_size, num_tags, 1)
+            broadcast_score = score.unsqueeze(2)
+    
+            # Broadcast emission score cho mỗi tag hiện tại có thể có
+            # shape: (batch_size, 1, num_tags)
+            broadcast_emission = emissions[i].unsqueeze(1)
+    
+            # Tính toán tensor score có kích thước (batch_size, num_tags, num_tags) trong đó
+            # cho mỗi mẫu, entry tại hàng i và cột j lưu trữ điểm số của chuỗi tag tốt nhất cho đến nay
+            # kết thúc bằng việc chuyển từ tag i sang tag j và phát ra
+            # shape: (batch_size, num_tags, num_tags)
+            next_score = broadcast_score + self.transitions + broadcast_emission
+    
+            # Tìm điểm số lớn nhất trên tất cả các tag hiện tại có thể có
+            # shape: (batch_size, num_tags)
+            next_score, indices = next_score.max(dim=1)
+    
+            # Thiết lập score cho score tiếp theo nếu bước thời gian này hợp lệ (mask == 1)
+            # và lưu chỉ số tạo ra điểm số tiếp theo
+            # shape: (batch_size, num_tags)
+            score = torch.where(mask[i].unsqueeze(-1), next_score, score)
+            indices = torch.where(mask[i].unsqueeze(-1), indices, oor_idx)
+            history_idx[i - 1] = indices
+    
+        # End transition score
         # shape: (batch_size, num_tags)
-        next_score, indices = next_score.max(dim=1)
-
-        # Thiết lập score cho score tiếp theo nếu bước thời gian này hợp lệ (mask == 1)
-        # và lưu chỉ số tạo ra điểm số tiếp theo
-        # shape: (batch_size, num_tags)
-        score = torch.where(mask[i].unsqueeze(-1), next_score, score)
-        indices = torch.where(mask[i].unsqueeze(-1), indices, oor_idx)
-        history_idx[i - 1] = indices
-
-    # End transition score
-    # shape: (batch_size, num_tags)
-    end_score = score + self.end_transitions
-    _, end_tag = end_score.max(dim=1)
-
-    # shape: (batch_size,)
-    seq_ends = mask.long().sum(dim=0) - 1
-
-    # chèn tag tốt nhất tại mỗi kết thúc chuỗi (vị trí cuối cùng với mask == 1)
-    history_idx = history_idx.transpose(1, 0).contiguous()
-    history_idx.scatter_(1, seq_ends.view(-1, 1).expand(-1, 1, self.num_tags),
-                         end_tag.view(-1, 1, 1).expand(-1, 1, self.num_tags))
-    history_idx = history_idx.transpose(1, 0).contiguous()
-
-    # Đường dẫn xác suất cao nhất cho mỗi chuỗi
-    best_tags_arr = torch.zeros((seq_length, batch_size),
-                                dtype=torch.long, device=device)
-    best_tags = torch.zeros(batch_size, 1, dtype=torch.long, device=device)
-    for idx in range(seq_length - 1, -1, -1):
-        best_tags = torch.gather(history_idx[idx], 1, best_tags)
-        best_tags_arr[idx] = best_tags.data.view(batch_size)
-
-    return torch.where(mask, best_tags_arr, oor_tag).transpose(0, 1)
+        end_score = score + self.end_transitions
+        _, end_tag = end_score.max(dim=1)
+    
+        # shape: (batch_size,)
+        seq_ends = mask.long().sum(dim=0) - 1
+    
+        # chèn tag tốt nhất tại mỗi kết thúc chuỗi (vị trí cuối cùng với mask == 1)
+        history_idx = history_idx.transpose(1, 0).contiguous()
+        history_idx.scatter_(1, seq_ends.view(-1, 1).expand(-1, 1, self.num_tags),
+                             end_tag.view(-1, 1, 1).expand(-1, 1, self.num_tags))
+        history_idx = history_idx.transpose(1, 0).contiguous()
+    
+        # Đường dẫn xác suất cao nhất cho mỗi chuỗi
+        best_tags_arr = torch.zeros((seq_length, batch_size),
+                                    dtype=torch.long, device=device)
+        best_tags = torch.zeros(batch_size, 1, dtype=torch.long, device=device)
+        for idx in range(seq_length - 1, -1, -1):
+            best_tags = torch.gather(history_idx[idx], 1, best_tags)
+            best_tags_arr[idx] = best_tags.data.view(batch_size)
+    
+        return torch.where(mask, best_tags_arr, oor_tag).transpose(0, 1)
 
 
     # def _viterbi_decode(self, emissions: torch.FloatTensor,
@@ -401,85 +401,85 @@ class CRF(nn.Module):
                           mask: torch.ByteTensor,
                           nbest: int,
                           pad_tag: Optional[int] = None) -> List[List[List[int]]]:
-    # emissions: (seq_length, batch_size, num_tags)
-    # mask: (seq_length, batch_size)
-    # return: (nbest, batch_size, seq_length)
-    if pad_tag is None:
-        pad_tag = 1  # Chỉnh lại giá trị của pad_tag
-
-    device = emissions.device
-    seq_length, batch_size = mask.shape
-
-    # Chuyển mask thành kiểu FloatTensor để sử dụng cho phép toán
-    mask = mask.float()
-
-    # Start transition và emission đầu tiên
-    # shape: (batch_size, num_tags)
-    score = self.start_transitions + emissions[0]
-    history_idx = torch.zeros((seq_length, batch_size, self.num_tags, nbest),
+        # emissions: (seq_length, batch_size, num_tags)
+        # mask: (seq_length, batch_size)
+        # return: (nbest, batch_size, seq_length)
+        if pad_tag is None:
+            pad_tag = 1  # Chỉnh lại giá trị của pad_tag
+    
+        device = emissions.device
+        seq_length, batch_size = mask.shape
+    
+        # Chuyển mask thành kiểu FloatTensor để sử dụng cho phép toán
+        mask = mask.float()
+    
+        # Start transition và emission đầu tiên
+        # shape: (batch_size, num_tags)
+        score = self.start_transitions + emissions[0]
+        history_idx = torch.zeros((seq_length, batch_size, self.num_tags, nbest),
+                                  dtype=torch.long, device=device)
+        oor_idx = torch.zeros((batch_size, self.num_tags, nbest),
                               dtype=torch.long, device=device)
-    oor_idx = torch.zeros((batch_size, self.num_tags, nbest),
-                          dtype=torch.long, device=device)
-    oor_tag = torch.full((seq_length, batch_size, nbest), pad_tag,
-                         dtype=torch.long, device=device)
-
-    # Viterbi algorithm recursive case: tính điểm số của chuỗi tag tốt nhất
-    # cho mỗi tag kế tiếp có thể có
-    for i in range(1, seq_length):
-        if i == 1:
-            broadcast_score = score.unsqueeze(-1)
-            broadcast_emission = emissions[i].unsqueeze(1)
-            # shape: (batch_size, num_tags, num_tags)
-            next_score = broadcast_score + self.transitions + broadcast_emission
-        else:
-            broadcast_score = score.unsqueeze(-1)
-            broadcast_emission = emissions[i].unsqueeze(1).unsqueeze(2)
-            # shape: (batch_size, num_tags, nbest, num_tags)
-            next_score = broadcast_score + self.transitions.unsqueeze(1) + broadcast_emission
-
-        # Tìm top `nbest` điểm số lớn nhất trên tất cả các tag hiện tại có thể có
-        # shape: (batch_size, nbest, num_tags)
-        next_score, indices = next_score.view(batch_size, -1, self.num_tags).topk(nbest, dim=1)
-
-        if i == 1:
-            score = score.unsqueeze(-1).expand(-1, -1, nbest)
-            indices = indices * nbest
-
-        # Chuyển về shape: (batch_size, num_tags, nbest)
-        next_score = next_score.transpose(2, 1)
-        indices = indices.transpose(2, 1)
-
-        # Thiết lập điểm số cho điểm số tiếp theo nếu bước thời gian này hợp lệ (mask == 0)
-        # và lưu chỉ số tạo ra điểm số tiếp theo
-        # shape: (batch_size, num_tags, nbest)
-        score = torch.where(mask[i].unsqueeze(-1).unsqueeze(-1) == 0, next_score, score)
-        indices = torch.where(mask[i].unsqueeze(-1).unsqueeze(-1) == 0, indices, oor_idx)
-        history_idx[i - 1] = indices
-
-    # Điểm số chuyển đổi kết thúc: (batch_size, num_tags, nbest)
-    end_score = score + self.end_transitions.unsqueeze(-1)
-    _, end_tag = end_score.view(batch_size, -1).topk(nbest, dim=1)
-
-    # shape: (batch_size,)
-    seq_ends = mask.long().sum(dim=0) - 1
-
-    # chèn tag tốt nhất tại mỗi kết thúc chuỗi (vị trí cuối cùng với mask == 0)
-    history_idx = history_idx.transpose(1, 0).contiguous()
-    history_idx.scatter_(1, seq_ends.view(-1, 1, 1, 1).expand(-1, 1, self.num_tags, nbest),
-                         end_tag.view(-1, 1, 1, nbest).expand(-1, 1, self.num_tags, nbest))
-    history_idx = history_idx.transpose(1, 0).contiguous()
-
-    # Đường dẫn xác suất cao nhất cho mỗi chuỗi
-    best_tags_arr = torch.zeros((seq_length, batch_size, nbest),
-                                dtype=torch.long, device=device)
-    best_tags = torch.arange(nbest, dtype=torch.long, device=device) \
-                     .view(1, -1).expand(batch_size, -1)
-    for idx in range(seq_length - 1, -1, -1):
-        best_tags = torch.gather(history_idx[idx].view(batch_size, -1), 1, best_tags)
-        best_tags_arr[idx] = best_tags.data.view(batch_size, -1) // nbest
-
-    return torch.where(mask.unsqueeze(-1) == 0, best_tags_arr, oor_tag).permute(2, 1, 0)
-
+        oor_tag = torch.full((seq_length, batch_size, nbest), pad_tag,
+                             dtype=torch.long, device=device)
+    
+        # Viterbi algorithm recursive case: tính điểm số của chuỗi tag tốt nhất
+        # cho mỗi tag kế tiếp có thể có
+        for i in range(1, seq_length):
+            if i == 1:
+                broadcast_score = score.unsqueeze(-1)
+                broadcast_emission = emissions[i].unsqueeze(1)
+                # shape: (batch_size, num_tags, num_tags)
+                next_score = broadcast_score + self.transitions + broadcast_emission
+            else:
+                broadcast_score = score.unsqueeze(-1)
+                broadcast_emission = emissions[i].unsqueeze(1).unsqueeze(2)
+                # shape: (batch_size, num_tags, nbest, num_tags)
+                next_score = broadcast_score + self.transitions.unsqueeze(1) + broadcast_emission
+    
+            # Tìm top `nbest` điểm số lớn nhất trên tất cả các tag hiện tại có thể có
+            # shape: (batch_size, nbest, num_tags)
+            next_score, indices = next_score.view(batch_size, -1, self.num_tags).topk(nbest, dim=1)
+    
+            if i == 1:
+                score = score.unsqueeze(-1).expand(-1, -1, nbest)
+                indices = indices * nbest
+    
+            # Chuyển về shape: (batch_size, num_tags, nbest)
+            next_score = next_score.transpose(2, 1)
+            indices = indices.transpose(2, 1)
+    
+            # Thiết lập điểm số cho điểm số tiếp theo nếu bước thời gian này hợp lệ (mask == 0)
+            # và lưu chỉ số tạo ra điểm số tiếp theo
+            # shape: (batch_size, num_tags, nbest)
+            score = torch.where(mask[i].unsqueeze(-1).unsqueeze(-1) == 0, next_score, score)
+            indices = torch.where(mask[i].unsqueeze(-1).unsqueeze(-1) == 0, indices, oor_idx)
+            history_idx[i - 1] = indices
+    
+        # Điểm số chuyển đổi kết thúc: (batch_size, num_tags, nbest)
+        end_score = score + self.end_transitions.unsqueeze(-1)
+        _, end_tag = end_score.view(batch_size, -1).topk(nbest, dim=1)
+    
+        # shape: (batch_size,)
+        seq_ends = mask.long().sum(dim=0) - 1
+    
+        # chèn tag tốt nhất tại mỗi kết thúc chuỗi (vị trí cuối cùng với mask == 0)
+        history_idx = history_idx.transpose(1, 0).contiguous()
+        history_idx.scatter_(1, seq_ends.view(-1, 1, 1, 1).expand(-1, 1, self.num_tags, nbest),
+                             end_tag.view(-1, 1, 1, nbest).expand(-1, 1, self.num_tags, nbest))
+        history_idx = history_idx.transpose(1, 0).contiguous()
+    
+        # Đường dẫn xác suất cao nhất cho mỗi chuỗi
+        best_tags_arr = torch.zeros((seq_length, batch_size, nbest),
+                                    dtype=torch.long, device=device)
+        best_tags = torch.arange(nbest, dtype=torch.long, device=device) \
+                         .view(1, -1).expand(batch_size, -1)
+        for idx in range(seq_length - 1, -1, -1):
+            best_tags = torch.gather(history_idx[idx].view(batch_size, -1), 1, best_tags)
+            best_tags_arr[idx] = best_tags.data.view(batch_size, -1) // nbest
+    
+        return torch.where(mask.unsqueeze(-1) == 0, best_tags_arr, oor_tag).permute(2, 1, 0)
+    
 
     # def _viterbi_decode_nbest(self, emissions: torch.FloatTensor,
     #                           mask: torch.ByteTensor,
