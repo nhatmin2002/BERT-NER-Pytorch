@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .layers.crf import CRF
-from transformers import BertModel,BertPreTrainedModel,AutoModelForTokenClassification,RobertaForTokenClassification,AutoConfig,RobertaModel
+from transformers import BertModel,BertPreTrainedModel,AutoModelForTokenClassification,RobertaForTokenClassification,AutoConfig,RobertaModel,AutoModel
 from .layers.linears import PoolerEndLogits, PoolerStartLogits
 from torch.nn import CrossEntropyLoss
 from losses.focal_loss import FocalLoss
