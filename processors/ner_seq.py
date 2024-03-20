@@ -282,7 +282,14 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
 
         # Account for [CLS] and [SEP] with "+ 2".
         special_tokens_count = 2
-
+        
+        if len(tokens) > max_seq_length - special_tokens_count:
+            tokens = tokens[: (max_seq_length - special_tokens_count)]
+            label_ids = label_ids[: (max_seq_length - special_tokens_count)]
+        else:
+          tokens=tokens
+          label_ids=label_ids
+            
         if cls_token_at_end:
             tokens += [cls_token]
             label_ids += [label_map['O']]
