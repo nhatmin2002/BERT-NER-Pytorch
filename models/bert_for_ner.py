@@ -74,26 +74,15 @@ class RoBertaCRF(BertPreTrainedModel):
         self.crf = CRF(num_tags=config.num_labels, batch_first=True)
         self.init_weights()
 
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None,labels=None,input_lens=None):
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None,labels=None):
         outputs =self.bert(input_ids = input_ids,attention_mask=attention_mask,token_type_ids=token_type_ids)
         sequence_output = outputs[0]
         sequence_output = self.dropout(sequence_output)
         logits = self.classifier(sequence_output)
-        # outputs = (logits,)
-        loss = None
+        outputs = (logits,)
         if labels is not None:
-            size = logits.size()
-            labels = labels[:,:size[1]]
-            loss = -1 * self.crf(emissions = logits, tags=labels, mask=attention_mask)
-
-            # crf decode
-            logits = self.crf.decode(emissions = logits)    # , mask=attention_mask
-            # logits = logits.transpose(0, 1)
-            logits = logits.permute(1,2,0)
-            # # logits = torch.squeeze(logits, dim=0)
-            # outputs = (logits,)
-            # outputs =(-1*loss,)+outputs
-        outputs = (loss, logits)
+            loss = self.crf(emissions = logits, tags=labels, mask=attention_mask)
+            outputs =(-1*loss,)+outputs
         return outputs # (loss), scores
 
 class BertSpanForNer(BertPreTrainedModel):
