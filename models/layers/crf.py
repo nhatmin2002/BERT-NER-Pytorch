@@ -158,7 +158,7 @@ class CRF(nn.Module):
                     f'got {tuple(emissions.shape[:2])} and {tuple(mask.shape)}')
             no_empty_seq = not self.batch_first and mask[0].all()
             no_empty_seq_bf = self.batch_first and mask[:, 0].all()
-            if not no_empty_seq and not no_empty_seq_bf:
+            if no_empty_seq and no_empty_seq_bf: #if not no_empty_seq and not no_empty_seq_bf:
                 raise ValueError('mask of the first timestep must all be on')
 
     def _compute_score(self, emissions: torch.Tensor,
