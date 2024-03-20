@@ -74,7 +74,7 @@ class CRF(nn.Module):
         if reduction not in ('none', 'sum', 'mean', 'token_mean'):
             raise ValueError(f'invalid reduction: {reduction}')
         if mask is None:
-            mask = torch.zeros_like(tags, dtype=torch.uint8, device=tags.device)#one_like
+            mask = torch.ones_like(tags, dtype=torch.uint8, device=tags.device)
         if mask.dtype != torch.uint8:
             mask = mask.byte()
         self._validate(emissions, tags=tags, mask=mask)
@@ -121,7 +121,7 @@ class CRF(nn.Module):
         if nbest is None:
             nbest = 1
         if mask is None:
-            mask = torch.zeros(emissions.shape[:2], dtype=torch.uint8,#ones
+            mask = torch.ones(emissions.shape[:2], dtype=torch.uint8,
                               device=emissions.device)
         if mask.dtype != torch.uint8:
             mask = mask.byte()
@@ -158,7 +158,7 @@ class CRF(nn.Module):
                     f'got {tuple(emissions.shape[:2])} and {tuple(mask.shape)}')
             no_empty_seq = not self.batch_first and mask[0].all()
             no_empty_seq_bf = self.batch_first and mask[:, 0].all()
-            if no_empty_seq and no_empty_seq_bf: #if not no_empty_seq and not no_empty_seq_bf:
+            if not no_empty_seq and not no_empty_seq_bf:
                 raise ValueError('mask of the first timestep must all be on')
 
     def _compute_score(self, emissions: torch.Tensor,
@@ -240,7 +240,6 @@ class CRF(nn.Module):
         # shape: (batch_size,)
         return torch.logsumexp(score, dim=1)
 
-
     def _viterbi_decode(self, emissions: torch.FloatTensor,
                         mask: torch.ByteTensor,
                         pad_tag: Optional[int] = None) -> List[List[int]]:
@@ -248,7 +247,7 @@ class CRF(nn.Module):
         # mask: (seq_length, batch_size)
         # return: (batch_size, seq_length)
         if pad_tag is None:
-            pad_tag = 1
+            pad_tag = 0
 
         device = emissions.device
         seq_length, batch_size = mask.shape
@@ -323,7 +322,6 @@ class CRF(nn.Module):
 
         return torch.where(mask, best_tags_arr, oor_tag).transpose(0, 1)
 
-    
     def _viterbi_decode_nbest(self, emissions: torch.FloatTensor,
                               mask: torch.ByteTensor,
                               nbest: int,
@@ -332,7 +330,7 @@ class CRF(nn.Module):
         # mask: (seq_length, batch_size)
         # return: (nbest, batch_size, seq_length)
         if pad_tag is None:
-            pad_tag = 1
+            pad_tag = 0
 
         device = emissions.device
         seq_length, batch_size = mask.shape
