@@ -74,7 +74,7 @@ class CRF(nn.Module):
         if reduction not in ('none', 'sum', 'mean', 'token_mean'):
             raise ValueError(f'invalid reduction: {reduction}')
         if mask is None:
-            mask = torch.ones_like(tags, dtype=torch.uint8, device=tags.device)
+            mask = torch.zeros_like(tags, dtype=torch.uint8, device=tags.device)#one_like
         if mask.dtype != torch.uint8:
             mask = mask.byte()
         self._validate(emissions, tags=tags, mask=mask)
