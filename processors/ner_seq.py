@@ -450,7 +450,7 @@ def collate_fn(batch):
 def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer,
                                  cls_token_at_end=False, cls_token="[CLS]", cls_token_segment_id=1,
                                  sep_token="[SEP]", pad_on_left=False, pad_token=0, pad_token_segment_id=0,
-                                 sequence_a_segment_id=0, mask_padding_with_zero=False):
+                                 sequence_a_segment_id=0, mask_padding_with_zero=True):
     """Loads a data file into a list of `InputBatch`s.
     
     Args:
@@ -508,7 +508,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
         
         # Mask has 1 for real tokens and 0 for padding tokens
-        input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+        input_mask = [0 if mask_padding_with_zero else 1] * len(input_ids)
         #input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
 
         input_len = len(label_ids)
