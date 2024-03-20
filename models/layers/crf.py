@@ -270,7 +270,7 @@ class CRF(nn.Module):
         _, end_tag = end_score.max(dim=1)
     
         seq_ends = (~mask).long().sum(dim=0) - 1
-    
+        print(seq_ends.size())
         history_idx = history_idx.transpose(1, 0).contiguous()
         history_idx.scatter_(1, seq_ends.view(-1, 1, 1).expand(-1, 1, self.num_tags),
                              end_tag.view(-1, 1, 1).expand(-1, 1, self.num_tags))
