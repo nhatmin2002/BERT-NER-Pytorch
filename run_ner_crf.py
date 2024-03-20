@@ -15,7 +15,7 @@ from tools.common import seed_everything,json_to_text
 from tools.common import init_logger, logger
 
 from transformers import WEIGHTS_NAME, BertConfig,get_linear_schedule_with_warmup,AdamW, BertTokenizer,AutoTokenizer,AutoConfig
-from models.bert_for_ner import BertCrfForNer
+from models.bert_for_ner import BertCrfForNer, RoBertaCRF
 from processors.utils_ner import get_entities
 from processors.ner_seq import convert_examples_to_features
 from processors.ner_seq import ner_processors as processors
@@ -25,7 +25,7 @@ from tools.finetuning_argparse import get_argparse
 
 MODEL_CLASSES = {
     ## bert ernie bert_wwm bert_wwwm_ext
-    'bert': (AutoConfig, BertCrfForNer, AutoTokenizer),#BertConfig,BertTokenizer
+    'bert': (AutoConfig,  RoBertaCRF, AutoTokenizer),#BertConfig,BertTokenizer
 }
 
 def train(args, train_dataset, model, tokenizer):
