@@ -22,7 +22,7 @@ from processors.ner_seq import ner_processors as processors
 from processors.ner_seq import collate_fn
 from metrics.ner_metrics import SeqEntityScore
 from tools.finetuning_argparse import get_argparse
-
+from torchcrf import CRF
 MODEL_CLASSES = {
     ## bert ernie bert_wwm bert_wwwm_ext
     'bert': (AutoConfig,  RoBertaCRF, AutoTokenizer),#BertConfig,BertTokenizer
