@@ -266,10 +266,79 @@ def collate_fn(batch):
     
 #     return features
 
+# def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer,
+#                                  cls_token_at_end=False, cls_token="[CLS]", cls_token_segment_id=1,
+#                                  sep_token="[SEP]", pad_on_left=False, pad_token=1, pad_token_segment_id=1,
+#                                  sequence_a_segment_id=1, mask_padding_with_zero=True):
+#     label_map = {label: i for i, label in enumerate(label_list)}
+#     features = []
+#     for (ex_index, example) in enumerate(examples):
+#         if ex_index % 10000 == 0:
+#             logger.info("Writing example %d of %d", ex_index, len(examples))
+#         if isinstance(example.text_a, list):
+#             example.text_a = " ".join(example.text_a)
+#         tokens = tokenizer.tokenize(example.text_a)
+#         label_ids = [label_map[x] for x in example.labels]
+
+#         # Account for [CLS] and [SEP] with "+ 2".
+#         special_tokens_count = 2
+        
+#         if len(tokens) > max_seq_length - special_tokens_count:
+#             tokens = tokens[: (max_seq_length - special_tokens_count)]
+#             label_ids = label_ids[: (max_seq_length - special_tokens_count)]
+#         else:
+#           tokens=tokens
+#           label_ids=label_ids
+            
+#         if cls_token_at_end:
+#             tokens += [cls_token]
+#             label_ids += [label_map['O']]
+#         else:
+#             tokens = [cls_token] + tokens
+#             label_ids = [label_map['O']] + label_ids
+
+#         tokens += [sep_token]
+#         label_ids += [label_map['O']]
+
+#         segment_ids = [sequence_a_segment_id] * len(tokens)
+
+#         input_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+#         # The mask has 1 for real tokens and 0 for padding tokens. Only real tokens are attended to.
+#         input_mask = [0 if mask_padding_with_zero else 1] * len(input_ids)
+#         input_len = len(label_ids)
+
+#         # Zero-pad up to the sequence length.
+#         padding_length = max_seq_length - len(input_ids)
+
+#         if pad_on_left:
+#             input_ids = ([pad_token] * padding_length) + input_ids
+#             input_mask = ([1 if mask_padding_with_zero else 0] * padding_length) + input_mask
+#             segment_ids = ([pad_token_segment_id] * padding_length) + segment_ids
+#             label_ids = ([pad_token] * padding_length) + label_ids
+#         else:
+#             input_ids += [pad_token] * padding_length
+#             input_mask += [1 if mask_padding_with_zero else 0] * padding_length
+#             segment_ids += [pad_token_segment_id] * padding_length
+#             label_ids += [pad_token] * padding_length
+
+#         if ex_index < 5:
+#             print("*** Example ***")
+#             print("guid: %s", example.guid)
+#             print("tokens: %s", " ".join([str(x) for x in tokens]))
+#             print("input_ids: %s", " ".join([str(x) for x in input_ids]))
+#             print("input_mask: %s", " ".join([str(x) for x in input_mask]))
+#             print("segment_ids: %s", " ".join([str(x) for x in segment_ids]))
+#             print("label_ids: %s", " ".join([str(x) for x in label_ids]))
+#         features.append(InputFeatures(input_ids=input_ids, input_mask=input_mask, input_len=input_len,
+#                                       segment_ids=segment_ids, label_ids=label_ids))
+#     return features
+
+
 def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer,
-                                 cls_token_at_end=False, cls_token="[CLS]", cls_token_segment_id=1,
-                                 sep_token="[SEP]", pad_on_left=False, pad_token=1, pad_token_segment_id=1,
-                                 sequence_a_segment_id=1, mask_padding_with_zero=True):
+                                     cls_token_at_end=False, cls_token="[CLS]", cls_token_segment_id=1,
+                                     sep_token="[SEP]", pad_on_left=False, pad_token=1, pad_token_segment_id=1,
+                                     sequence_a_segment_id=1, mask_padding_with_zero=True):
     label_map = {label: i for i, label in enumerate(label_list)}
     features = []
     for (ex_index, example) in enumerate(examples):
@@ -282,25 +351,22 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
 
         # Account for [CLS] and [SEP] with "+ 2".
         special_tokens_count = 2
-        
+
         if len(tokens) > max_seq_length - special_tokens_count:
             tokens = tokens[: (max_seq_length - special_tokens_count)]
             label_ids = label_ids[: (max_seq_length - special_tokens_count)]
-        else:
-          tokens=tokens
-          label_ids=label_ids
-            
+
+        tokens += [sep_token]
+        label_ids += [label_map['O']]
+
+        segment_ids = [sequence_a_segment_id] * len(tokens)
+
         if cls_token_at_end:
             tokens += [cls_token]
             label_ids += [label_map['O']]
         else:
             tokens = [cls_token] + tokens
             label_ids = [label_map['O']] + label_ids
-
-        tokens += [sep_token]
-        label_ids += [label_map['O']]
-
-        segment_ids = [sequence_a_segment_id] * len(tokens)
 
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
 
@@ -309,19 +375,22 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         input_len = len(label_ids)
 
         # Zero-pad up to the sequence length.
-        padding_length = max_seq_length - len(input_ids)
+        if len(label_ids) < max_seq_length:
+            padding_length = max_seq_length - len(label_ids)
+            if pad_on_left:
+                input_ids = [pad_token] * padding_length + input_ids
+                input_mask = [1 if mask_padding_with_zero else 0] * padding_length + input_mask
+                segment_ids = [pad_token_segment_id] * padding_length + segment_ids
+                label_ids = [pad_token] * padding_length + label_ids
+            else:
+                input_ids += [pad_token] * padding_length
+                input_mask += [1 if mask_padding_with_zero else 0] * padding_length
+                segment_ids += [pad_token_segment_id] * padding_length
+                label_ids += [pad_token] * padding_length
 
-        if pad_on_left:
-            input_ids = ([pad_token] * padding_length) + input_ids
-            input_mask = ([1 if mask_padding_with_zero else 0] * padding_length) + input_mask
-            segment_ids = ([pad_token_segment_id] * padding_length) + segment_ids
-            label_ids = ([pad_token] * padding_length) + label_ids
-        else:
-            input_ids += [pad_token] * padding_length
-            input_mask += [1 if mask_padding_with_zero else 0] * padding_length
-            segment_ids += [pad_token_segment_id] * padding_length
-            label_ids += [pad_token] * padding_length
-
+        a=len(label_ids)
+        if a<256:
+          print(a)
         if ex_index < 5:
             print("*** Example ***")
             print("guid: %s", example.guid)
@@ -330,10 +399,10 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
             print("input_mask: %s", " ".join([str(x) for x in input_mask]))
             print("segment_ids: %s", " ".join([str(x) for x in segment_ids]))
             print("label_ids: %s", " ".join([str(x) for x in label_ids]))
+            
         features.append(InputFeatures(input_ids=input_ids, input_mask=input_mask, input_len=input_len,
                                       segment_ids=segment_ids, label_ids=label_ids))
     return features
-
 
 class CnerProcessor(DataProcessor):
     """Processor for the chinese ner data set."""
