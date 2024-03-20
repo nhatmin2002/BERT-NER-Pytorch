@@ -510,7 +510,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         # Mask has 1 for real tokens and 0 for padding tokens
         #input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
         #input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
-        input_mask = [0 if mask_padding_with_zero else 1] * len(input_ids)
+        input_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
 
         input_len = len(label_ids)
         
