@@ -86,7 +86,7 @@ class BertCrfForNer(RobertaForTokenClassification): #BertPreTrainedModel
 #             outputs =(-1*loss,)+outputs
 #         return outputs # (loss), scores
 
-class RoBertaCRF(BertPreTrainedModel):
+class RoBertaCRF(RobertaForTokenClassification):
     def __init__(self, config):
         super(RoBertaCRF, self).__init__(config)
         self.bert = AutoModel.from_config(config)
@@ -95,18 +95,17 @@ class RoBertaCRF(BertPreTrainedModel):
         self.crf = CRF(num_tags=config.num_labels, batch_first=True)
         self.init_weights()
 
-    def forward(self, input_ids, token_type_ids=None, attention_mask=None, labels=None):
-        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
+    def forward(self, input_ids, token_type_ids=None, attention_mask=None,labels=None):
+        outputs =self.bert(input_ids = input_ids,attention_mask=attention_mask,token_type_ids=token_type_ids)
         sequence_output = outputs[0]
         sequence_output = self.dropout(sequence_output)
         logits = self.classifier(sequence_output)
         outputs = (logits,)
         if labels is not None:
-            # Convert attention_mask to torch.uint8 (boolean tensor)
-            mask = attention_mask.to(torch.uint8)
-            loss = self.crf(emissions=logits, tags=labels, mask=mask)
-            outputs = (-1 * loss,) + outputs
-        return outputs 
+            loss = self.crf(emissions = logits, tags=labels, mask=attention_mask)
+            outputs =(-1*loss,)+outputs
+        return outputs # (loss), scores
+        
 class BertSpanForNer(BertPreTrainedModel):
     def __init__(self, config,):
         super(BertSpanForNer, self).__init__(config)
