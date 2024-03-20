@@ -445,9 +445,11 @@ def collate_fn(batch):
 #     return features
 
 
+
+
 def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer,
                                  cls_token_at_end=False, cls_token="[CLS]", cls_token_segment_id=1,
-                                 sep_token="[SEP]", pad_on_left=False, pad_token=1, pad_token_segment_id=1,
+                                 sep_token="[SEP]", pad_on_left=False, pad_token=0, pad_token_segment_id=0,
                                  sequence_a_segment_id=1, mask_padding_with_zero=True):
     """Loads a data file into a list of `InputBatch`s.
     
@@ -470,7 +472,6 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         List of features.
     """
     label_map = {label: i for i, label in enumerate(label_list)}
-    print(label_map)
     features = []
     
     for (ex_index, example) in enumerate(examples):
@@ -542,14 +543,14 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         assert len(label_ids) == max_seq_length
         
 
-        if ex_index < 20:
+        if ex_index < 5:
             logger.info("*** Example ***")
-            print("guid: %s", example.guid)
-            print("tokens: %s", " ".join([str(x) for x in tokens]))
-            print("input_ids: %s", " ".join([str(x) for x in input_ids]))
-            print("input_mask: %s", " ".join([str(x) for x in input_mask]))
-            print("segment_ids: %s", " ".join([str(x) for x in segment_ids]))
-            print("label_ids: %s", " ".join([str(x) for x in label_ids]))
+            logger.info("guid: %s", example.guid)
+            logger.info("tokens: %s", " ".join([str(x) for x in tokens]))
+            logger.info("input_ids: %s", " ".join([str(x) for x in input_ids]))
+            logger.info("input_mask: %s", " ".join([str(x) for x in input_mask]))
+            logger.info("segment_ids: %s", " ".join([str(x) for x in segment_ids]))
+            logger.info("label_ids: %s", " ".join([str(x) for x in label_ids]))
         
         features.append(InputFeatures(input_ids=input_ids, input_mask=input_mask, input_len=input_len,
                                       segment_ids=segment_ids, label_ids=label_ids))
